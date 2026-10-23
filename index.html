@@ -47,7 +47,7 @@
     flex-direction: column;
     justify-content: space-between;
   }
-  .name { font-size: clamp(18px, 5.5vw, 24px); font-weight: 700; margin: 0; }
+  .name { font-size: clamp(15px, 4.6vw, 21px); font-weight: 700; margin: 0; }
   .role { color: var(--accent); font-weight: 600; font-size: clamp(11px, 3.2vw, 13px); margin-top: 2px; }
   .tagline { color: var(--muted); font-size: clamp(10px, 2.8vw, 12px); margin-top: 6px; }
   .contacts { list-style: none; margin: 0; padding: 0; font-size: clamp(10px, 2.9vw, 12.5px); line-height: 1.6; }
@@ -115,7 +115,7 @@
 
   <section class="card back">
     <div class="qr" id="qr"></div>
-    <div class="label">Scan to save my contact<small id="qrhint"></small></div>
+    <div class="label"><span id="qrlabel"></span><small id="qrhint"></small></div>
   </section>
 
   <div class="actions">
@@ -172,8 +172,10 @@
   ].filter(Boolean).join("\r\n");
 
   const qrData = c.qrMode === "url" ? c.pageUrl : vcard;
+  document.getElementById("qrlabel").textContent =
+    c.qrMode === "url" ? "Scan to view my card" : "Scan to save my contact";
   document.getElementById("qrhint").textContent =
-    c.qrMode === "url" ? "Opens my digital card" : "Point your phone camera here";
+    c.qrMode === "url" ? "Then tap \u201cSave contact\u201d" : "Point your phone camera here";
 
   qrcode.stringToBytes = qrcode.stringToBytesFuncs["UTF-8"];
   const qr = qrcode(0, "M");
