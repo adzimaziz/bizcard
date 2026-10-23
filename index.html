@@ -2,159 +2,299 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050b0a">
 <title>Business Card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 <script src="config.js"></script>
-<script src="vendor/qrcode.js"></script>
 <style>
   :root {
-    --accent: #0f766e;
-    --bg: #eef1f4;
-    --card: #ffffff;
-    --ink: #111827;
-    --muted: #6b7280;
+    --gold-1: #f6e7b0;
+    --gold-2: #d4af37;
+    --gold-3: #a67c1b;
+    --ink: #e9efe9;
+    --muted: #9fb3ad;
+    --card-a: #0d2724;
+    --card-b: #06110f;
   }
   * { box-sizing: border-box; }
+  html, body { height: 100%; }
   body {
     margin: 0;
     min-height: 100vh;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg);
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     color: var(--ink);
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #12332f 0%, transparent 60%),
+      radial-gradient(800px 500px at 50% 120%, #1a1406 0%, transparent 60%),
+      #050b0a;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 24px;
+    justify-content: center;
+    gap: 28px;
     padding: 32px 16px;
+    overflow-x: hidden;
   }
+
+  /* ---------- Card ---------- */
+  .stage { perspective: 1200px; width: 100%; max-width: 440px; }
   .card {
-    width: 100%;
-    max-width: 420px;
-    aspect-ratio: 3.5 / 2;
-    background: var(--card);
-    border-radius: 14px;
-    box-shadow: 0 10px 30px rgba(0,0,0,.12);
-    overflow: hidden;
+    --rx: 0deg; --ry: 0deg; --gx: 50%; --gy: 50%;
     position: relative;
+    width: 100%;
+    aspect-ratio: 3.5 / 2;
+    border-radius: 16px;
+    background:
+      radial-gradient(120% 140% at 100% 0%, rgba(212,175,55,.10), transparent 55%),
+      linear-gradient(135deg, var(--card-a), var(--card-b));
+    box-shadow:
+      0 30px 60px -20px rgba(0,0,0,.8),
+      0 0 0 1px rgba(212,175,55,.35),
+      inset 0 1px 0 rgba(255,255,255,.06);
+    transform: rotateX(var(--rx)) rotateY(var(--ry));
+    transform-style: preserve-3d;
+    transition: transform .25s ease-out;
+    animation: enter 1.1s cubic-bezier(.2,.8,.2,1) backwards;
   }
-  /* Front */
-  .front { display: flex; }
-  .front .bar { width: 10px; background: var(--accent); }
-  .front .body {
-    flex: 1;
-    padding: 6% 7%;
+  @keyframes enter {
+    from { opacity: 0; transform: translateY(24px) rotateX(18deg) scale(.96); }
+    to   { opacity: 1; transform: rotateX(var(--rx)) rotateY(var(--ry)); }
+  }
+  /* clipping layer for texture and shine, so the card itself can grow if text needs room */
+  .fx { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; pointer-events: none; }
+  /* fine brushed texture */
+  .fx::before {
+    content: "";
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(115deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px);
+    pointer-events: none;
+  }
+  /* sweeping shine */
+  .fx::after {
+    content: "";
+    position: absolute;
+    top: -50%; left: -60%;
+    width: 45%; height: 200%;
+    background: linear-gradient(90deg, transparent, rgba(255,240,200,.05) 30%, rgba(255,245,215,.28) 50%, rgba(255,240,200,.05) 70%, transparent);
+    transform: rotate(20deg);
+    animation: sweep 4.5s ease-in-out 1.2s infinite;
+    pointer-events: none;
+    mix-blend-mode: screen;
+  }
+  @keyframes sweep {
+    0%   { left: -60%; }
+    45%  { left: 130%; }
+    100% { left: 130%; }
+  }
+  /* glare that follows finger / mouse */
+  .glare {
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at var(--gx) var(--gy), rgba(255,236,180,.16), transparent 45%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .3s;
+  }
+  .card.active .glare { opacity: 1; }
+
+  .frame {
+    position: absolute; inset: 9px;
+    border: 1px solid rgba(212,175,55,.22);
+    border-radius: 10px;
+    pointer-events: none;
+  }
+  .content {
+    position: relative;
+    height: 100%;
+    padding: 6.5% 7%;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
   }
-  .name { font-size: clamp(15px, 4.6vw, 21px); font-weight: 700; margin: 0; }
-  .role { color: var(--accent); font-weight: 600; font-size: clamp(11px, 3.2vw, 13px); margin-top: 2px; }
-  .tagline { color: var(--muted); font-size: clamp(10px, 2.8vw, 12px); margin-top: 6px; }
-  .contacts { list-style: none; margin: 0; padding: 0; font-size: clamp(10px, 2.9vw, 12.5px); line-height: 1.6; }
-  .contacts span { display: inline-block; width: 1.4em; color: var(--accent); }
-  .contacts a { color: inherit; text-decoration: none; }
-  /* Back */
-  .back {
-    background: var(--accent);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7%;
-    padding: 6%;
+  .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .gold {
+    background: linear-gradient(100deg, var(--gold-3) 0%, var(--gold-1) 25%, var(--gold-2) 45%, var(--gold-1) 60%, var(--gold-3) 85%);
+    background-size: 250% 100%;
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+    animation: foil 6s linear infinite;
   }
-  .qr {
-    background: #fff;
-    border-radius: 8px;
-    padding: 0;
-    height: 88%;
-    aspect-ratio: 1;
-  }
-  .qr svg { width: 100%; height: 100%; display: block; }
-  .back .label { font-size: clamp(12px, 3.6vw, 15px); font-weight: 600; max-width: 40%; }
-  .back .label small { display: block; font-weight: 400; opacity: .85; margin-top: 4px; }
-  .actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
-  button, .btn {
-    font: inherit;
-    font-size: 14px;
-    padding: 10px 16px;
-    border-radius: 8px;
-    border: 1px solid var(--accent);
-    background: var(--accent);
-    color: #fff;
-    cursor: pointer;
-    text-decoration: none;
-  }
-  button.secondary { background: transparent; color: var(--accent); }
+  @keyframes foil { from { background-position: 0% 0; } to { background-position: 250% 0; } }
 
+  .name {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(17px, 5vw, 25px);
+    line-height: 1.1;
+    margin: 0;
+    letter-spacing: .3px;
+  }
+  .role {
+    margin-top: 5px;
+    font-size: clamp(8.5px, 2.4vw, 11px);
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--ink);
+    opacity: .9;
+  }
+  .company {
+    margin-top: 2px;
+    font-size: clamp(8.5px, 2.4vw, 11px);
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--gold-2);
+  }
+  .monogram {
+    flex: none;
+    width: clamp(36px, 10vw, 46px); aspect-ratio: 1;
+    border-radius: 50%;
+    border: 1px solid rgba(212,175,55,.6);
+    display: grid; place-items: center;
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(14px, 4vw, 18px);
+    letter-spacing: 1px;
+  }
+  .rule {
+    height: 1px;
+    width: 38%;
+    background: linear-gradient(90deg, var(--gold-2), transparent);
+    margin: 0 0 7px;
+  }
+  .tagline {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-style: italic;
+    font-size: clamp(10.5px, 3vw, 13.5px);
+    color: var(--muted);
+    margin: 0 0 5px;
+  }
+  .contacts { list-style: none; margin: 0; padding: 0; font-size: clamp(9.5px, 2.7vw, 12.5px); line-height: 1.6; }
+  .contacts li { display: flex; align-items: center; gap: 9px; }
+  .contacts svg { width: 1.05em; height: 1.05em; flex: none; stroke: var(--gold-2); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .contacts a { color: inherit; text-decoration: none; }
+
+  /* ---------- Save button ---------- */
+  .save {
+    font: 500 14px/1 "Inter", system-ui, sans-serif;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    padding: 14px 22px;
+    border-radius: 999px;
+    border: 1px solid rgba(212,175,55,.6);
+    background: rgba(212,175,55,.08);
+    color: var(--gold-1);
+    cursor: pointer;
+    animation: fade 1s ease 0.8s both;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .save:active { transform: scale(.97); }
+  @keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card, .fx::after, .gold, .save { animation: none !important; }
+    .card { transition: none; }
+  }
   @media print {
     @page { size: 3.5in 2in; margin: 0; }
-    body { background: none; padding: 0; gap: 0; display: block; }
-    .actions { display: none; }
-    .card {
-      width: 3.5in; height: 2in; max-width: none;
-      border-radius: 0; box-shadow: none;
-      page-break-after: always;
-      -webkit-print-color-adjust: exact; print-color-adjust: exact;
-    }
+    body { background: none; padding: 0; display: block; }
+    .save { display: none; }
+    .stage { max-width: none; perspective: none; }
+    .card { width: 3.5in; height: 2in; border-radius: 0; box-shadow: none; transform: none; animation: none;
+            -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .fx::after { display: none; }
+    .gold { animation: none; }
   }
 </style>
 </head>
 <body>
-  <section class="card front">
-    <div class="bar"></div>
-    <div class="body">
-      <div>
-        <h1 class="name" id="name"></h1>
-        <div class="role" id="role"></div>
-        <div class="tagline" id="tagline"></div>
+  <div class="stage">
+    <article class="card" id="card">
+      <div class="fx"><div class="glare"></div></div>
+      <div class="frame"></div>
+      <div class="content">
+        <div class="top">
+          <div>
+            <h1 class="name gold" id="name"></h1>
+            <div class="role" id="role"></div>
+            <div class="company" id="company"></div>
+          </div>
+          <div class="monogram gold" id="monogram"></div>
+        </div>
+        <div>
+          <div class="rule"></div>
+          <p class="tagline" id="tagline"></p>
+          <ul class="contacts" id="contacts"></ul>
+        </div>
       </div>
-      <ul class="contacts" id="contacts"></ul>
-    </div>
-  </section>
-
-  <section class="card back">
-    <div class="qr" id="qr"></div>
-    <div class="label"><span id="qrlabel"></span><small id="qrhint"></small></div>
-  </section>
-
-  <div class="actions">
-    <button id="save">Save contact</button>
-    <button class="secondary" id="dlqr">Download QR</button>
-    <button class="secondary" onclick="window.print()">Print</button>
+    </article>
   </div>
+
+  <button class="save" id="save">Save contact</button>
 
 <script>
   const c = window.CARD;
   const fullName = [c.firstName, c.lastName].filter(Boolean).join(" ");
-  document.documentElement.style.setProperty("--accent", c.accent || "#0f766e");
-  document.title = fullName + " — Business Card";
+  const $ = (id) => document.getElementById(id);
+  document.title = fullName;
 
-  document.getElementById("name").textContent = fullName;
-  document.getElementById("role").textContent = [c.title, c.company].filter(Boolean).join(" · ");
-  document.getElementById("tagline").textContent = c.tagline || "";
+  $("name").textContent = fullName;
+  $("role").textContent = c.title || "";
+  $("company").textContent = c.company || "";
+  $("monogram").textContent = c.monogram || fullName.split(/\s+/).map((w) => w[0]).slice(0, 2).join("");
+  $("tagline").textContent = c.tagline || "";
+  if (!c.tagline) $("tagline").remove();
 
+  const icons = {
+    phone: '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/>',
+    mail: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/>',
+    web: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/>',
+    in: '<path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/>',
+    pin: '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/>',
+  };
   const strip = (u) => u.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
   const rows = [
-    ["☎", c.phone, c.phone && "tel:" + c.phone.replace(/[^+\d]/g, "")],
-    ["✉", c.email, c.email && "mailto:" + c.email],
-    ["⌂", c.website && strip(c.website), c.website],
+    ["phone", c.phone, c.phone && "tel:" + c.phone.replace(/[^+\d]/g, "")],
+    ["mail", c.email, c.email && "mailto:" + c.email],
+    ["web", c.website && strip(c.website), c.website],
     ["in", c.linkedin && strip(c.linkedin), c.linkedin],
-    ["⌖", c.address, null],
+    ["pin", c.address, null],
   ];
-  const ul = document.getElementById("contacts");
   for (const [icon, text, href] of rows) {
     if (!text) continue;
     const li = document.createElement("li");
-    const s = document.createElement("span");
-    s.textContent = icon;
-    li.append(s);
-    const t = href ? Object.assign(document.createElement("a"), { href, textContent: text }) : document.createTextNode(text);
-    li.append(t);
-    ul.append(li);
+    li.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${icons[icon]}</svg>`;
+    li.append(href ? Object.assign(document.createElement("a"), { href, textContent: text }) : document.createTextNode(text));
+    $("contacts").append(li);
   }
 
-  // vCard 3.0 — widely supported by iOS and Android camera apps.
+  // Tilt + glare following the finger or mouse
+  const card = $("card");
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!reduce) {
+    const move = (x, y) => {
+      const r = card.getBoundingClientRect();
+      const px = Math.min(Math.max((x - r.left) / r.width, 0), 1);
+      const py = Math.min(Math.max((y - r.top) / r.height, 0), 1);
+      card.style.setProperty("--ry", (px - 0.5) * 14 + "deg");
+      card.style.setProperty("--rx", (0.5 - py) * 14 + "deg");
+      card.style.setProperty("--gx", px * 100 + "%");
+      card.style.setProperty("--gy", py * 100 + "%");
+      card.classList.add("active");
+    };
+    const reset = () => {
+      card.style.setProperty("--rx", "0deg");
+      card.style.setProperty("--ry", "0deg");
+      card.classList.remove("active");
+    };
+    card.addEventListener("pointermove", (e) => move(e.clientX, e.clientY));
+    card.addEventListener("pointerleave", reset);
+    card.addEventListener("touchmove", (e) => move(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+    card.addEventListener("touchend", reset);
+  }
+
+  // vCard 3.0 for "Save contact"
   const esc = (v) => String(v).replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/([,;])/g, "\\$1");
   const vcard = [
     "BEGIN:VCARD",
@@ -171,42 +311,12 @@
     "END:VCARD",
   ].filter(Boolean).join("\r\n");
 
-  const qrData = c.qrMode === "url" ? c.pageUrl : vcard;
-  document.getElementById("qrlabel").textContent =
-    c.qrMode === "url" ? "Scan to view my card" : "Scan to save my contact";
-  document.getElementById("qrhint").textContent =
-    c.qrMode === "url" ? "Then tap \u201cSave contact\u201d" : "Point your phone camera here";
-
-  qrcode.stringToBytes = qrcode.stringToBytesFuncs["UTF-8"];
-  const qr = qrcode(0, "M");
-  qr.addData(qrData);
-  qr.make();
-  document.getElementById("qr").innerHTML = qr.createSvgTag({ cellSize: 4, margin: 4, scalable: true });
-
-  const download = (blob, filename) => {
+  $("save").onclick = () => {
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = filename;
+    a.href = URL.createObjectURL(new Blob([vcard], { type: "text/vcard" }));
+    a.download = fullName.toLowerCase().replace(/\s+/g, "-") + ".vcf";
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  };
-  const slug = fullName.toLowerCase().replace(/\s+/g, "-");
-
-  document.getElementById("save").onclick = () =>
-    download(new Blob([vcard], { type: "text/vcard" }), slug + ".vcf");
-
-  document.getElementById("dlqr").onclick = () => {
-    const size = 1024, n = qr.getModuleCount(), quiet = 4;
-    const cell = Math.floor(size / (n + quiet * 2));
-    const canvas = Object.assign(document.createElement("canvas"), { width: cell * (n + quiet * 2), height: cell * (n + quiet * 2) });
-    const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#000";
-    for (let r = 0; r < n; r++)
-      for (let col = 0; col < n; col++)
-        if (qr.isDark(r, col)) ctx.fillRect((col + quiet) * cell, (r + quiet) * cell, cell, cell);
-    canvas.toBlob((b) => download(b, slug + "-qr.png"));
   };
 </script>
 </body>

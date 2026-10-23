@@ -1,4 +1,4 @@
-// Edit these details — everything on the card and in the QR code comes from here.
+// Edit these details — everything on the card comes from here.
 // Leave a field as "" to hide it.
 window.CARD = {
   firstName: "Mohammad Adzim",
@@ -11,12 +11,5 @@ window.CARD = {
   address: "Klang, Selangor",
   linkedin: "",
   tagline: "Turning power generation data into decisions.",
-
-  // What the QR code holds:
-  //   "vcard" – scanning offers "Add to contacts" (works offline)
-  //   "url"   – scanning opens this card's web page (set pageUrl below)
-  qrMode: "url",
-  pageUrl: "https://adzimaziz.github.io/bizcard/",
-
-  accent: "#0f766e",
+  monogram: "MA",
 };
