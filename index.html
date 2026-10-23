@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Business Card</title>
+<script src="config.js"></script>
+<script src="vendor/qrcode.js"></script>
+<style>
+  :root {
+    --accent: #0f766e;
+    --bg: #eef1f4;
+    --card: #ffffff;
+    --ink: #111827;
+    --muted: #6b7280;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    padding: 32px 16px;
+  }
+  .card {
+    width: 100%;
+    max-width: 420px;
+    aspect-ratio: 3.5 / 2;
+    background: var(--card);
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.12);
+    overflow: hidden;
+    position: relative;
+  }
+  /* Front */
+  .front { display: flex; }
+  .front .bar { width: 10px; background: var(--accent); }
+  .front .body {
+    flex: 1;
+    padding: 6% 7%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .name { font-size: clamp(18px, 5.5vw, 24px); font-weight: 700; margin: 0; }
+  .role { color: var(--accent); font-weight: 600; font-size: clamp(11px, 3.2vw, 13px); margin-top: 2px; }
+  .tagline { color: var(--muted); font-size: clamp(10px, 2.8vw, 12px); margin-top: 6px; }
+  .contacts { list-style: none; margin: 0; padding: 0; font-size: clamp(10px, 2.9vw, 12.5px); line-height: 1.6; }
+  .contacts span { display: inline-block; width: 1.4em; color: var(--accent); }
+  .contacts a { color: inherit; text-decoration: none; }
+  /* Back */
+  .back {
+    background: var(--accent);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7%;
+    padding: 6%;
+  }
+  .qr {
+    background: #fff;
+    border-radius: 8px;
+    padding: 0;
+    height: 88%;
+    aspect-ratio: 1;
+  }
+  .qr svg { width: 100%; height: 100%; display: block; }
+  .back .label { font-size: clamp(12px, 3.6vw, 15px); font-weight: 600; max-width: 40%; }
+  .back .label small { display: block; font-weight: 400; opacity: .85; margin-top: 4px; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  button, .btn {
+    font: inherit;
+    font-size: 14px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  button.secondary { background: transparent; color: var(--accent); }
+
+  @media print {
+    @page { size: 3.5in 2in; margin: 0; }
+    body { background: none; padding: 0; gap: 0; display: block; }
+    .actions { display: none; }
+    .card {
+      width: 3.5in; height: 2in; max-width: none;
+      border-radius: 0; box-shadow: none;
+      page-break-after: always;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+  }
+</style>
+</head>
+<body>
+  <section class="card front">
+    <div class="bar"></div>
+    <div class="body">
+      <div>
+        <h1 class="name" id="name"></h1>
+        <div class="role" id="role"></div>
+        <div class="tagline" id="tagline"></div>
+      </div>
+      <ul class="contacts" id="contacts"></ul>
+    </div>
+  </section>
+
+  <section class="card back">
+    <div class="qr" id="qr"></div>
+    <div class="label">Scan to save my contact<small id="qrhint"></small></div>
+  </section>
+
+  <div class="actions">
+    <button id="save">Save contact</button>
+    <button class="secondary" id="dlqr">Download QR</button>
+    <button class="secondary" onclick="window.print()">Print</button>
+  </div>
+
+<script>
+  const c = window.CARD;
+  const fullName = [c.firstName, c.lastName].filter(Boolean).join(" ");
+  document.documentElement.style.setProperty("--accent", c.accent || "#0f766e");
+  document.title = fullName + " — Business Card";
+
+  document.getElementById("name").textContent = fullName;
+  document.getElementById("role").textContent = [c.title, c.company].filter(Boolean).join(" · ");
+  document.getElementById("tagline").textContent = c.tagline || "";
+
+  const strip = (u) => u.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
+  const rows = [
+    ["☎", c.phone, c.phone && "tel:" + c.phone.replace(/[^+\d]/g, "")],
+    ["✉", c.email, c.email && "mailto:" + c.email],
+    ["⌂", c.website && strip(c.website), c.website],
+    ["in", c.linkedin && strip(c.linkedin), c.linkedin],
+    ["⌖", c.address, null],
+  ];
+  const ul = document.getElementById("contacts");
+  for (const [icon, text, href] of rows) {
+    if (!text) continue;
+    const li = document.createElement("li");
+    const s = document.createElement("span");
+    s.textContent = icon;
+    li.append(s);
+    const t = href ? Object.assign(document.createElement("a"), { href, textContent: text }) : document.createTextNode(text);
+    li.append(t);
+    ul.append(li);
+  }
+
+  // vCard 3.0 — widely supported by iOS and Android camera apps.
+  const esc = (v) => String(v).replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/([,;])/g, "\\$1");
+  const vcard = [
+    "BEGIN:VCARD",
+    "VERSION:3.0",
+    `N:${esc(c.lastName || "")};${esc(c.firstName || "")};;;`,
+    `FN:${esc(fullName)}`,
+    c.company && `ORG:${esc(c.company)}`,
+    c.title && `TITLE:${esc(c.title)}`,
+    c.phone && `TEL;TYPE=CELL:${c.phone}`,
+    c.email && `EMAIL;TYPE=INTERNET:${c.email}`,
+    c.website && `URL:${c.website}`,
+    c.linkedin && `URL:${c.linkedin}`,
+    c.address && `ADR;TYPE=WORK:;;${esc(c.address)};;;;`,
+    "END:VCARD",
+  ].filter(Boolean).join("\r\n");
+
+  const qrData = c.qrMode === "url" ? c.pageUrl : vcard;
+  document.getElementById("qrhint").textContent =
+    c.qrMode === "url" ? "Opens my digital card" : "Point your phone camera here";
+
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs["UTF-8"];
+  const qr = qrcode(0, "M");
+  qr.addData(qrData);
+  qr.make();
+  document.getElementById("qr").innerHTML = qr.createSvgTag({ cellSize: 4, margin: 4, scalable: true });
+
+  const download = (blob, filename) => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+  const slug = fullName.toLowerCase().replace(/\s+/g, "-");
+
+  document.getElementById("save").onclick = () =>
+    download(new Blob([vcard], { type: "text/vcard" }), slug + ".vcf");
+
+  document.getElementById("dlqr").onclick = () => {
+    const size = 1024, n = qr.getModuleCount(), quiet = 4;
+    const cell = Math.floor(size / (n + quiet * 2));
+    const canvas = Object.assign(document.createElement("canvas"), { width: cell * (n + quiet * 2), height: cell * (n + quiet * 2) });
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#000";
+    for (let r = 0; r < n; r++)
+      for (let col = 0; col < n; col++)
+        if (qr.isDark(r, col)) ctx.fillRect((col + quiet) * cell, (r + quiet) * cell, cell, cell);
+    canvas.toBlob((b) => download(b, slug + "-qr.png"));
+  };
+</script>
+</body>
+</html>
