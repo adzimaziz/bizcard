@@ -6,6 +6,8 @@ window.CARD = {
   title: "Manager, Advanced Data Analytics",
   company: "TNB Genco",
   phone: "+60 19-731 9885",
+  whatsapp: "+60 19-731 9885",   // number for the "WhatsApp me now" button ("" to hide it)
+  whatsappMessage: "Hi Adzim, I got your contact from your business card.",
   email: "adzim.aziz@tnb.com.my",
   website: "",
   address: "Klang, Selangor",
