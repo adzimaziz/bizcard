@@ -3,6 +3,7 @@
 window.CARD = {
   firstName: "Mohammad Adzim",
   lastName: "Bin Ab Aziz",
+  contactName: "Adzim Aziz",     // name used when someone taps "Save contact"
   title: "Manager, Advanced Data Analytics",
   company: "TNB Genco",
   phone: "+60 19-731 9885",
