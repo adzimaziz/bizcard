@@ -13,6 +13,7 @@ window.CARD = {
   website: "",
   address: "Klang, Selangor",
   linkedin: "",
-  tagline: "Turning power generation data into decisions.",
-  monogram: "MA",
+  tagline: "",                   // e.g. "Turning power generation data into decisions."
+  monogram: "MA",               // shown only when there is no photo
+  photo: "photo.jpg",
 };

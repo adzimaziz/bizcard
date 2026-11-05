@@ -60,19 +60,29 @@
   }
   @keyframes grid { to { background-position: 0 360px; } }
 
+  /* ---------- Chamfer (cut corners) ----------
+     --c = big cut (top-left & bottom-right), --s = small cut (top-right & bottom-left) */
+  .chamfer {
+    clip-path: polygon(
+      var(--c) 0, calc(100% - var(--s)) 0, 100% var(--s), 100% calc(100% - var(--c)),
+      calc(100% - var(--c)) 100%, var(--s) 100%, 0 calc(100% - var(--s)), 0 var(--c));
+  }
+
   /* ---------- Card ---------- */
-  .stage { perspective: 1200px; width: 100%; max-width: 440px; }
+  .stage {
+    perspective: 1200px; width: 100%; max-width: 440px;
+    filter: drop-shadow(0 28px 40px rgba(0,0,0,.75)) drop-shadow(0 0 22px rgba(226,189,90,.14));
+  }
   .card {
     --rx: 0deg; --ry: 0deg; --gx: 50%; --gy: 50%;
     position: relative;
     width: 100%;
     aspect-ratio: 3.5 / 2;
-    border-radius: 18px;
+    --c: 24px; --s: 8px;
     padding: 1.5px;                       /* room for the animated edge */
     transform: rotateX(var(--rx)) rotateY(var(--ry));
     transition: transform .25s ease-out;
     animation: enter 1.1s cubic-bezier(.2,.8,.2,1) backwards;
-    filter: drop-shadow(0 28px 40px rgba(0,0,0,.75)) drop-shadow(0 0 22px rgba(226,189,90,.12));
   }
   @keyframes enter {
     from { opacity: 0; transform: translateY(24px) rotateX(18deg) scale(.96); }
@@ -81,7 +91,6 @@
   /* rotating gold/cyan holographic edge */
   .edge {
     position: absolute; inset: 0;
-    border-radius: inherit;
     overflow: hidden;
   }
   .edge::before {
@@ -97,7 +106,8 @@
   .face {
     position: relative;
     height: 100%;
-    border-radius: 16.5px;
+    /* inner cut shrinks by 1.5px × (2 − √2) so the gold edge stays even on the diagonals */
+    --c: 23.1px; --s: 7.1px;
     overflow: hidden;
     background:
       radial-gradient(90% 120% at 100% 0%, rgba(226,189,90,.13), transparent 55%),
@@ -142,10 +152,11 @@
 
   /* tech corner brackets */
   .corner { position: absolute; width: 14px; height: 14px; border: 1.5px solid var(--gold-2); opacity: .7; pointer-events: none; }
-  .corner.tl { top: 10px; left: 10px; border-right: 0; border-bottom: 0; }
   .corner.tr { top: 10px; right: 10px; border-left: 0; border-bottom: 0; }
   .corner.bl { bottom: 10px; left: 10px; border-right: 0; border-top: 0; }
-  .corner.br { bottom: 10px; right: 10px; border-left: 0; border-top: 0; }
+  .cham { position: absolute; width: 50px; height: 50px; fill: none; stroke: var(--gold-2); stroke-width: 1.5; opacity: .75; pointer-events: none; }
+  .cham.tl { top: 0; left: 0; }
+  .cham.br { bottom: 0; right: 0; transform: rotate(180deg); }
 
   .content {
     position: relative;
@@ -221,6 +232,21 @@
     font-size: clamp(11px, 3.2vw, 14px);
     letter-spacing: .08em;
   }
+  /* portrait in a gold chamfered frame */
+  .photo {
+    --c: 14px; --s: 4px;
+    flex: none;
+    width: clamp(60px, 18vw, 80px); aspect-ratio: 1;
+    padding: 1.5px;
+    background: linear-gradient(135deg, var(--gold-3), var(--gold-1) 40%, var(--gold-2) 65%, rgba(94,242,214,.9));
+  }
+  .photo img {
+    --c: 13.1px; --s: 3.1px;
+    display: block; width: 100%; height: 100%;
+    object-fit: cover;
+    filter: saturate(.92) contrast(1.05);
+  }
+
   .rule {
     height: 1px;
     width: 42%;
@@ -256,30 +282,47 @@
     animation: fade 1s ease 0.8s both;
   }
   .save, .wa {
+    --c: 14px; --s: 0px;
+    position: relative;
+    isolation: isolate;
     width: 100%;
     display: inline-flex; align-items: center; justify-content: center; gap: 10px;
     text-decoration: none;
     font: 700 15px/1 "Rajdhani", system-ui, sans-serif;
     letter-spacing: .22em;
     text-transform: uppercase;
-    padding: 15px 22px;
-    border-radius: 12px;
-    border: 1px solid rgba(226,189,90,.55);
-    background: rgba(226,189,90,.06);
+    padding: 16px 22px;
+    border: 0;
+    background: rgba(226,189,90,.6);        /* shows through as the 1px outline */
     color: var(--gold-1);
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
   }
+  .save::before {
+    content: "";
+    position: absolute; inset: 1px;
+    --c: 13.6px;
+    background: linear-gradient(rgba(226,189,90,.07), rgba(226,189,90,.07)), #0a0c0b;
+    z-index: -1;
+  }
   .wa {
-    border-color: transparent;
     background: linear-gradient(100deg, var(--gold-3), var(--gold-1) 45%, var(--gold-2));
     color: #0a0d0c;
-    animation: glow 2.6s ease-in-out 2s infinite;
+  }
+  .wa::after {
+    content: "";
+    position: absolute; inset: 0;
+    background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,.6) 50%, transparent 65%);
+    background-size: 300% 100%;
+    animation: btn-shine 3.2s ease-in-out 2s infinite;
+    pointer-events: none;
+    z-index: -1;                           /* behind the label */
   }
   .wa svg { width: 19px; height: 19px; fill: currentColor; flex: none; }
-  @keyframes glow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(226,189,90,.45); }
-    50%      { box-shadow: 0 0 0 10px rgba(226,189,90,0); }
+  @keyframes btn-shine {
+    0%   { background-position: 100% 0; }
+    50%  { background-position: 0% 0; }
+    100% { background-position: 0% 0; }
   }
   .save:active, .wa:active { transform: scale(.97); }
   @keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
@@ -288,6 +331,9 @@
   @media (max-width: 340px) {
     .tagline { display: none; }
     .content { padding-left: 10%; }
+    .photo { width: 52px; }
+    .name { font-size: 13.5px; }
+    .role { font-size: 9.5px; letter-spacing: .1em; }
   }
 
   /* short screens (landscape phones) */
@@ -298,7 +344,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .card, .face::after, .edge::before, .gold, .actions, .wa, body::before, .rule::after { animation: none !important; }
+    .card, .face::after, .edge::before, .gold, .actions, .wa::after, body::before, .rule::after { animation: none !important; }
     .card { transition: none; }
   }
   @media print {
@@ -307,8 +353,9 @@
     body { height: auto; overflow: visible; padding: 0; display: block; }
     body::before, .actions { display: none; }
     .stage { max-width: none; perspective: none; }
-    .card { width: 3.5in; height: 2in; padding: 0; filter: none; transform: none; animation: none; }
-    .face { border-radius: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .stage { filter: none; }
+    .card { width: 3.5in; height: 2in; padding: 0; transform: none; animation: none; }
+    .face { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .face::after, .edge { display: none; }
     .gold { animation: none; }
   }
@@ -316,11 +363,13 @@
 </head>
 <body>
   <div class="stage">
-    <article class="card" id="card">
+    <article class="card chamfer" id="card">
       <div class="edge"></div>
-      <div class="face">
+      <div class="face chamfer">
         <div class="glare"></div>
-        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <svg class="cham tl" viewBox="0 0 50 50" aria-hidden="true"><path d="M10 46V27.3L27.3 10H46"/></svg>
+        <svg class="cham br" viewBox="0 0 50 50" aria-hidden="true"><path d="M10 46V27.3L27.3 10H46"/></svg>
+        <i class="corner tr"></i><i class="corner bl"></i>
         <div class="content">
           <div class="top">
             <div>
@@ -328,7 +377,8 @@
               <div class="role" id="role"></div>
               <div class="company" id="company"></div>
             </div>
-            <div class="monogram"><span class="gold" id="monogram"></span></div>
+            <div class="photo chamfer" id="photo"><img class="chamfer" id="photoImg" alt=""></div>
+            <div class="monogram" id="monogramBox"><span class="gold" id="monogram"></span></div>
           </div>
           <div>
             <div class="rule"></div>
@@ -341,11 +391,11 @@
   </div>
 
   <div class="actions">
-    <a class="wa" id="wa" target="_blank" rel="noopener">
+ <a class="wa chamfer" id="wa" target="_blank" rel="noopener">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.8-1.2.2-.6.2-1.1.1-1.2l-.5-.3z"/></svg>
       WhatsApp me now
     </a>
-    <button class="save" id="save">Save contact</button>
+    <button class="save chamfer" id="save">Save contact</button>
   </div>
 
 <script>
@@ -364,6 +414,14 @@
   $("role").textContent = c.title || "";
   $("company").textContent = c.company || "";
   $("monogram").textContent = c.monogram || fullName.split(/\s+/).map((w) => w[0]).slice(0, 2).join("");
+  // Show the photo when there is one, otherwise the monogram
+  if (c.photo) {
+    $("photoImg").src = c.photo;
+    $("photoImg").alt = fullName;
+    $("monogramBox").remove();
+  } else {
+    $("photo").remove();
+  }
   $("tagline").textContent = c.tagline || "";
   if (!c.tagline) $("tagline").remove();
 
